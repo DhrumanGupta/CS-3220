@@ -1,0 +1,80 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amscd}
+\usepackage{amsbsy}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+
+% Reduce margins
+\geometry{margin=0.75in}
+
+% Custom header setup
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textbf{Golub-Kahan Bidiagonalization and SVD}}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Dhruman Gupta - 2025-30-11}
+
+\title{Golub-Kahan Bidiagonalization and SVD}
+\author{Dhruman Gupta}
+\date{2025-30-11}
+
+% Remove paragraph indentation
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+    \section{Notation}
+    \begin{enumerate}
+        \item $||.||$ denotes the 2-norm of a vector, or the operator norm of a matrix.
+        \item $||.||_F$ denotes the Frobenius norm of a matrix.
+        \item $\sigma_i(A)$ denotes the $i$-th singular value of a matrix $A$.
+        \item $\lambda_i(A)$ denotes the $i$-th largest eigenvalue of a matrix $A$ (we consider A to be hermitian)
+        \item $\epsilon_{mach}$ denotes the machine epsilon.
+    \end{enumerate}
+
+    \section{Introduction}
+
+    A naive approach to compute the SVD of a matrix $A$ is to compute the eigenvalues and eigenvectors of the matrix $A^T A$. However, this is not efficient and can be unstable:\\
+
+    We know that singular values are stable under pertubations, i.e:
+    \begin{align*}
+        ||\sigma_i(A) - \sigma_i(A + \hat{A})|| \leq ||\hat{A}|| \quad \forall i
+    \end{align*}
+
+    We also know that the eigenvalues of a hermitian matrix are stable under pertubations, i.e:
+    \begin{align*}
+        ||\lambda_i(A) - \lambda_i(A + \hat{A})|| \leq ||\hat{A}|| \quad \forall i
+    \end{align*}
+
+    This means that if we have a backward-stable algorithm, i.e $\frac{||\hat{A}||}{||A||} \in O(\epsilon_{mach})$, we should get:
+    \begin{align*}
+        ||\sigma_i(A) - \sigma_i(A + \hat{A})|| \in O(\epsilon_{mach} ||A||) \quad \forall i
+    \end{align*}
+
+    However, if we use the $A^T A$ method, we get eigenvalues with error:
+
+    \begin{align*}
+        ||\lambda_i(A^T A) - \lambda_i(A^T A + \hat{A^T A})|| \in O(\epsilon_{mach} ||A^T A||) = O(\epsilon_{mach} ||A||^2) \quad \forall i
+    \end{align*}
+
+    Computing the square roots of these to get the singular values, we get:
+    
+    \begin{align*}
+        ||\sigma_i(A) - \sigma_i(A + \hat{A})|| \in O(\epsilon_{mach} \frac{||A||^2}{\sigma_i(A)}) \quad \forall i
+    \end{align*}
+
+    So we are accumulating an additional error of $O(||A||/\sigma_i(A))$ in each singular value. We know that $||A|| = \sigma_1(A)$, thus the error is $O(\frac{\sigma_1(A)}{\sigma_i(A)})$. In the case when $\sigma_1(A) >> \sigma_i(A)$, the problem for the $i^{th}$ singular value is ill-conditioned.\\
+
+    In this project, I explore the Golub-Kahan bidiagonalization algorithm, followed by an implicit QR algorithm to diagonalize the bidiagonal matrix.\\
+
+    I discuss the algorithm in the presentation. I have uploaded the notes of the presentation (they are not exhaustive as compared to the presentation, but they give the basic idea of the algorithm).\\
+
+    The code is within this repository.
+
+
+\end{document}
