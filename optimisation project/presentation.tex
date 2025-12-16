@@ -1,0 +1,451 @@
+\documentclass{beamer}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{color}
+\usepackage{ulem}
+\usepackage{multirow}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{dcolumn}
+\usepackage{tikz}
+\usepackage{threeparttable}
+\usepackage{lscape}
+\usepackage{booktabs} 
+\usepackage{color}
+\usepackage{calc}
+\usepackage{tabularx}
+\usepackage{graphicx}
+
+\mode<presentation>
+
+\usetheme[progressbar=frametitle, numbering=fraction, subsectionpage=progressbar]{metropolis}
+
+
+\definecolor{Purple}{HTML}{911146}
+\definecolor{Orange}{HTML}{CF4A30}
+\setbeamercolor{alerted text}{fg=Orange}
+\setbeamercolor{frametitle}{bg=Purple}
+\setbeamercolor{background canvas}{bg=white}
+
+% Define custom block styles
+\setbeamercolor{block title}{fg=white,bg=Purple}
+\setbeamercolor{block body}{bg=Purple!5!white,fg=black}
+
+% Add rounding to block corners
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\usepackage{appendixnumberbeamer}
+
+% BibTeX packages
+\usepackage[style=authoryear,backend=bibtex]{biblatex}
+\addbibresource{presentation.bib}
+
+% Reduce bibliography spacing
+\setlength{\bibitemsep}{0.5\itemsep}
+\renewcommand*{\bibfont}{\small}
+
+%---------------------------------------------
+
+% Define norm command
+\newcommand{\norm}[2][2]{\left\| #2 \right\|_{#1}}
+
+% Define argmin command
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\title{Proximal Gradient and Subgradient Methods}
+\subtitle{Optimisation for Non Differentiable Functions}
+\author{Dhruman Gupta} % Add your name here
+%---------------------------------------------
+
+\begin{document}
+    \nocite{*}
+    \begin{frame}
+      \titlepage
+\end{frame}
+
+\begin{frame}{Proximal Gradient and Subgradient Methods}
+    \begin{itemize}
+        \item We want to minimize convex functions 
+        \item When these are differentiable, we can use gradient descent. For an error of $\epsilon$, we need $O(1/\epsilon)$ iterations.
+        \item What if $f$ is not differentiable?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Subgradient Method}
+    The subgradient method allows us to minimize convex functions that are not differentiable.\\
+    \vspace{0.5cm}
+    \begin{block}{Definition: Subgradient}
+        Let $f: \mathbb{R}^n \to \mathbb{R}$ be a convex function. A subgradient of $f$ at $x$ is a vector $g$ such that $f(y) \geq f(x) + g^T (y - x)$ for all $y$.
+    \end{block}
+
+    Note: $f$ is differentiable at $x$ if and only if the subgradient $\partial f(x) = \{\nabla f(x)\}$.
+\end{frame}
+
+\begin{frame}{Subgradients}
+    We say $f$ is \emph{subdifferentiable} at $x$ if the subgradient $\partial f(x)$ is non-empty.\\
+    \vspace{0.5cm}
+
+    Note that:
+    \[
+    \partial f(x) = \bigcap_{z \in \textbf{dom}\ f} \{ g | f(z) \geq f(x) + g^T (z - x) \}
+    \]
+
+    So $\partial f(x)$ is an infinite intersection of closed half-spaces, and therefore closed and convex.
+\end{frame}
+
+\begin{frame}{Existence of Subgradients}
+    If $f$ is convex, and $x \in \textbf{int dom}\ f$, then $\partial f(x)$ is non-empty.\\
+
+    \vspace{0.5cm}
+
+    To prove this, let's first define the supporting hyperplane and the supporting hyperplane theorem.
+\end{frame}
+
+\begin{frame}{Supporting Hyperplane}
+    A hyperplane $H$ supports a set $S \subseteq \mathbb{R}^n$ at $x \in S$ if:
+
+    \begin{enumerate}
+        \item $S$ is contained in one of the halfspaces defined by the hyperplane.
+        \item The hyperplane touches $S$ at $x$.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Supporting Hyperplane Theorem}
+   \begin{block}{Supporting Hyperplane Theorem}
+
+    Let $S$ be a convex set, and let $x \in \textbf{bdry} S$. Then there exists a hyperplane $H$ that supports $S$ at $x$.
+    
+   \end{block}
+    
+    \vspace{0.5cm}
+    
+    We will take this for granted. Now, let's prove the existence of subgradients.
+\end{frame}
+
+\begin{frame}{Proof of Existence of Subgradients}
+    $\textbf{epi}\ f = \{ (x, t) | x \in \mathbb{R}^n, t \in \mathbb{R}, f(x) \leq t \}$. It is convex when $f$ is convex.
+
+    \vspace{0.5cm}
+
+    Now, take $(x, f(x))$. This is in the epigraph of $f$. Applying the supporting hyperplane theorem, there exists a hyperplane $H$ that supports $\textbf{epi}\ f$ at $(x, f(x))$.
+
+    \vspace{0.5cm}
+
+    So $\exists a \in \mathbb{R}^n, b \in \mathbb{R}$ such that $\forall (z, t) \in \textbf{epi}\ f$:
+
+    \[
+    a^T (z-x) + b(t-f(x)) \leq 0
+    \]
+\end{frame}
+
+\begin{frame}{Proof of Existence of Subgradients}
+    \[
+    a^T (z-x) + b(t-f(x)) \leq 0
+    \]
+
+    This is true $\forall (z, t) \in \textbf{epi}\ f$.  Take $t \to \infty$.\\
+
+    Thus, we must have $b \leq 0$
+
+    \vspace{0.5cm}
+
+    Case \#1: $b < 0$: Divide both sides by $b$:
+    \begin{align*}
+        \frac{a}{b}^T (z-x) + (t-f(x)) \geq 0 \\
+        f(z) \geq f(x) + \frac{-a}{b}^T (z-x)
+    \end{align*}
+    So, $g = \frac{-a}{b}$ is a subgradient of $f$ at $x$.
+
+\end{frame}
+
+\begin{frame}{Proof of Existence of Subgradients}
+   Case \#2: $b = 0$: Now, our equation becomes:
+
+    \[
+    a^T (z-x) \leq 0 \forall z \in \textbf{dom}\ f
+    \]
+
+    As $x$ is in the interior of the domain, $\exists \epsilon > 0, d \in \mathbb{R}^n$ s.t $x + \epsilon d \in \textbf{dom}\ f$ and $x - \epsilon d \in \textbf{dom}\ f$.
+
+    \[
+    a^T \epsilon d \leq 0, \qquad a^T (-\epsilon d) \leq 0
+    \]
+    So, $a = 0$. But, if $a, b$ are both zero, then the hyperplane is the entire space, and thus is not a valid supporting hyperplane. 
+
+    This is a contradiction to the supporting hyperplane theorem. Thus, $b \neq 0$.
+
+\end{frame}
+
+\begin{frame}{The Subgradient Method}
+    So what is the subgradient method?
+    \vspace{0.5cm}
+    It is given by:
+    \[
+    x_{k+1} = x_k - t_k g_k
+    \]
+    where $g_k \in \partial f(x_k)$.
+
+    If $f$ is differentiable, then this is just gradient descent.
+
+    Since we do not always descend, we keep track of the best value:
+    \[
+    f(x_{best}^{(k)}) = \min_{i=1}^k f(x_i)
+    \]
+\end{frame}
+
+
+\begin{frame}{Choosing the Step Size}
+    In gradient descent, we can adaptively choose the step size, often done in optimisers like Adam.
+ 
+    \vspace{0.5cm}
+ 
+    However, for subgradient methods, we can't do this, because we don't have "the" gradient. So we choose a fixed step size, or step sizes $t_k$ such that:
+ 
+    \[
+    \sum_{k=1}^K t_k = \infty, \qquad \sum_{k=1}^K t_k^2 < \infty
+    \]
+ \end{frame}
+
+ \begin{frame}{Convergence of the Subgradient Method}
+    Assume $f$ is convex and $G$-Lipschitz continuous. Then we have:
+
+    \begin{block}{Fixed Step Size}
+        \[
+        \lim_{k \to \infty} f(x_{best}^{(k)}) = f^* + \frac{G^2t}{2}
+        \]
+    \end{block}
+
+    \begin{block}{Converging Step Size}
+        \[
+        \lim_{k \to \infty} f(x_{best}^{(k)}) = f^*
+        \]
+    \end{block}
+ \end{frame}
+
+ \begin{frame}{Proof of Convergence}
+    \begin{align*}
+        &\norm{x^{k} - x^*}^2\\
+        &= \norm{x^{k-1} - t_k g^{k-1} - x^*}^2\\
+        &= \norm{x^{k-1} - x^*}^2 + t^2_k\norm{g^{k-1}}^2 -2t_k <g^{k-1}, x^{k-1} - x^*>
+    \end{align*}
+
+    $g$ is a subgradient of $f$ at $x^{k-1}$, so:
+    \begin{align*}
+        &f(x^*) \geq f(x^{k-1}) + <g, x^* - x^{k-1}>\\
+        &\implies <g, x^{k-1} - x^*> \geq f(x^{k-1}) - f(x^*)\\
+        &\implies -2t_k <g, x^{k-1} - x^*> \leq -2t_k (f(x^{k-1}) - f(x^*))
+    \end{align*}
+    So:
+    $\norm{x^{k} - x^*}^2 \leq \norm{x^{k-1} - x^*}^2 + t^2_k\norm{g^{k-1}}^2 -2t_k (f(x^{k-1}) - f(x^*))$
+\end{frame}
+
+\begin{frame}{Proof of Convergence}
+    \begin{align*}
+        \norm{x^{k} - x^*}^2 &\leq\\
+        &\norm{x^{k-1} - x^*}^2 + t^2_k\norm{g^{k-1}}^2 -2t_k (f(x^{k-1}) - f(x^*))
+    \end{align*}
+    Iterating this, we get:
+    \begin{align*}
+        \norm{x^{k} - x^*}^2 \leq \norm{x^{0} - x^*}^2 + \sum_{i=1}^k t^2_i\norm{g^{i-1}}^2 -2\sum_{i=1}^k t_i (f(x^{i-1}) - f(x^*))
+    \end{align*}
+    Set $R = \norm{x^{0} - x^*}$. We know that $\norm{x^{k} - x^*}^2 \geq 0$. So:
+
+    $\sum_{i=1}^k t_i (f(x^{i-1}) - f(x^*)) \leq \frac{R^2 + \sum_{i=1}^k t^2_i\norm{g^{i-1}}^2}{2}$
+\end{frame}
+
+
+\begin{frame}{Proof of Convergence}
+    $\sum_{i=1}^k t_i (f(x^{i-1}) - f(x^*)) \leq \frac{R^2 + \sum_{i=1}^k t^2_i\norm{g^{i-1}}^2}{2}$
+
+    Now:
+    \begin{align*}
+        \left(f(x_{best}^{(k)}) - f(x^*)\right)\sum t_i &\leq \sum_{i=1}^k t_i (f(x^{i-1}) - f(x^*))\\
+        f(x_{best}^{(k)}) - f(x^*) &\leq \frac{R^2 + G^2\sum_{i=1}^k t^2_i}{2 \sum t_i}
+    \end{align*}
+
+    For fixed step size $t$, this becomes:
+    \begin{align*}
+        f(x_{best}^{(k)}) - f(x^*) &\leq \frac{R^2}{2kt} + \frac{G^2t}{2}
+    \end{align*}
+
+    Taking limit proves first claim.
+\end{frame}
+
+
+\begin{frame}{Proof of Convergence}
+    \begin{align*}
+        f(x_{best}^{(k)}) - f(x^*) &\leq \frac{R^2 + G^2\sum_{i=1}^k t^2_i}{2 \sum t_i}
+    \end{align*}
+
+    For dynamic step size $t_k$, the numerator is finite and the denominator is infinite as $k \to \infty$. So:
+    \begin{align*}
+        \lim_{k \to \infty} f(x_{best}^{(k)}) &= f(x^*)
+    \end{align*}
+
+    For convergence analysis, say we want error $\epsilon$. Then we can set:
+
+    $\frac{R^2}{2kt} = \frac{G^2t}{2} = \frac{\epsilon}{2}$. Then, $t = \frac{\epsilon}{G^2}$, and $k = \frac{R^2G^2}{\epsilon^2}$.\\
+
+    $R, G$ constants, so $k = O(\frac{1}{\epsilon^2})$.
+
+\end{frame}
+
+\begin{frame}{Can we do better?}
+    \begin{align*}
+        k = O(\frac{1}{\epsilon^2})
+    \end{align*}
+
+    This is very bad compared to gradient descent, which only needs $O(1/\epsilon)$ iterations. \\
+
+    \vspace{0.5cm}
+
+    Can we do better?\\
+    \vspace{0.5cm}
+
+    In this setting, it can be shown that for any starting point and time step size, there always exists a function $f$ where this method will take $O(1/\epsilon^2)$ iterations.
+    \vspace{0.5cm}
+
+    So, let's see a setting (popular) where we can do better.
+\end{frame}
+
+\begin{frame}{Composite Functions}
+    Let $f(x) = g(x) + h(x)$, where $g$ is convex and differentiable, and $h$ is convex and non-differentiable.\\
+
+    \vspace{0.5cm}
+
+    We want to minimize $f(x)$. Can we somehow combine gradient descent and subgradient method to get a better convergence rate?\\
+
+    \vspace{0.5cm}
+
+    Recall that for gradient descent, if $\nabla f$ is $L$-Lipschitz, then we are minimising:
+    \[
+    x_{next} = \argmin_{z} \left(f(x) + \nabla f(x)^T(z-x) + \frac{1}{2t} \norm{z-x}^2\right)
+    \]
+\end{frame}
+
+
+\begin{frame}{Majorization (Descent Lemma)}
+    Recall that for gradient descent, if $\nabla f$ $L$-Lipschitz, then we are minimising:
+    \[
+    x_{next} = \argmin_{z} \left(f(x) + \nabla f(x)^T(z-x) + \frac{1}{2t} \norm{z-x}^2\right)
+    \]
+
+    The reason is that for such $f$:
+    \[
+    f(z) \leq f(x) + \nabla f(x)^T(z-x) + \frac{1}{2t} \norm{z-x}^2
+    \]
+
+    when $t \leq \frac{1}{L}$ (this is called the descent lemma).
+\end{frame}
+
+\begin{frame}{Intuition for Proximal Gradient Descent}
+    \[
+    x_{next} = \argmin_{z} \left(f(x) + \nabla f(x)^T(z-x) + \frac{1}{2t} \norm{z-x}^2\right)
+    \]
+
+    If $f$ is differentiable, then to solution to this is $x_{next} = x - t \nabla f(x)$ - exactly the gradient descent step.\\
+
+    \vspace{0.5cm}
+
+    But now $f$ is not differentiable. So why don't we minimise $g$ using this method, and leave $h$ alone?
+\end{frame}
+
+\begin{frame}{Proximal Function}
+    So:
+    \begin{align*}
+        &\argmin_{z} \left( g(x) + \nabla g(x)^T(z-x) + \frac{1}{2t} \norm{z-x}^2 + h(z) \right)\\
+        &= \argmin_{z} \frac{1}{2t} \norm{z-(x-t\nabla g(x))}^2 + h(z)
+    \end{align*}
+
+    This is exactly the proximal gradient descent step. Define:
+
+    $prox_{h, t} = \argmin_{z} \frac{1}{2t} \norm{z-x}^2 + h(z)$
+
+\end{frame}
+
+\begin{frame}{Proximal Gradient Descent}
+
+    $prox_{h, t}(x) = \argmin_{z} \frac{1}{2t} \norm{z-x}^2 + h(z)$
+
+    The gradient descent step is:
+
+    \begin{align*}
+        x^k = prox_{h, t_k}(x^{k-1} - t_k \nabla g(x^{k-1}))
+    \end{align*}
+    
+\end{frame}
+
+\begin{frame}{Example: LASSO Loss}
+
+    Let $X$ be data points (inputs), and $y$ be labels. For a linear model, our least squares loss is:
+
+    \begin{align*}
+        \frac{1}{2} \norm{X\beta - y}^2
+    \end{align*}
+
+    where $\beta$ are the weights. In regularization, we want to penalise the magnitude of $\beta$. Say we use the $L_1$ norm. I.e:
+
+    \[
+    f(\beta) = \frac{1}{2} \norm{X\beta - y}^2 + \lambda \norm[1]{\beta}
+    \]
+
+    This is the LASSO loss. Note that the first term is differentiable, and the second term is not.
+\end{frame}
+
+\begin{frame}{Proximal Gradient Descent for LASSO}
+    The proximal gradient descent step is:
+    \begin{align*}
+        \beta^k = prox_{\lambda \norm[1]{\beta}, t_k}(\beta^{k-1} + t_k X^T (y - X\beta^{k-1}))
+    \end{align*}
+    Here:
+    \[
+[prox_{\lambda \norm[1]{\beta}, t_k}]_i =
+\begin{cases}
+\beta_i - \lambda, & \text{if } \beta_i > \lambda, \\[6pt]
+0, & \text{if } -\lambda \le \beta_i \le \lambda, \quad i = 1, \ldots, n, \\[6pt]
+\beta_i + \lambda, & \text{if } \beta_i < -\lambda
+\end{cases}
+\]
+
+This is called the {\color{red}iterative soft thresholding algorithm (ISTA)}.
+
+\end{frame}
+
+\begin{frame}{Proximal Gradient Descent for LASSO}
+
+    \begin{figure}
+        \includegraphics[width=0.9\textwidth]{loss_curves.png}
+    \end{figure}
+
+    Practically used in all LASSO losses.
+\end{frame}
+
+\begin{frame}{Convergence Analysis}
+    If
+    \begin{enumerate}
+        \item $g$ is convex, differentiable, with domain $\mathbb{R}^n$, and $\nabla g$ is $L$-Lipschitz.
+        \item $h$ is convex and $prox_{h, t}$ can be computed
+    \end{enumerate}
+
+    Then, the convergence rate is $O(1/\epsilon)$.\\
+
+    \vspace{0.5cm}
+
+    So we do much better than the subgradient method!
+
+    \vspace{0.5cm}
+
+    Note: if $prox_{h, t}$ is expensive to compute, then each step takes much longer and convergence is costly. But for many problems, we know a good closed form.
+\end{frame}
+
+
+\begin{frame}[allowframebreaks]{Bibliography}
+    \small
+    \printbibliography[heading=none]
+\end{frame}
+
+
+\begin{frame}[standout]
+Thank you! \\
+\end{frame}
+\end{document}
